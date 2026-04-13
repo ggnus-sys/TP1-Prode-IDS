@@ -2,7 +2,7 @@ import sys
 sys.path.append("..")  # Agrega
 from flask import Flask
 from flask_cors import CORS
-from routes.partidos_mundial import partidos_mundial_bp
+from app_backend.routes.partidos_mundial import partidos_mundial_bp
 
 app = Flask(__name__)
 CORS(app)
