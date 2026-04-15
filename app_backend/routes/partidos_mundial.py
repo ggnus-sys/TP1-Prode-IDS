@@ -4,7 +4,7 @@ import re
 
 partidos_mundial_bp = Blueprint("partidos_mundial", __name__)
 
-FASES_VALIDAS = ["Grupos", "Dieciseisavos", "Octavos", "Cuartos", "Semis", "Final"]
+FASES_VALIDAS = ["GRUPOS", "DIECISEISAVOS", "OCTAVOS", "CUARTOS", "SEMIS", "FINAL"]
 EQUIPOS_VALIDOS = ["México","Sudáfrica","Corea del Sur","República Checa","Canadá","Bosnia y Herzegovina","Estados Unidos",
                    "Paraguay","Catar","Suiza","Brasil","Marruecos","Haití","Escocia","Australia",
                    "Turquía","Alemania","Curazao","Países Bajos","Japón","Costa de Marfil","Ecuador","Suecia","Túnez","España","Islas de Cabo Verde","Bélgica",
