@@ -18,10 +18,6 @@ for statement in sql.split(";"):
         print("Statement executed")
 
 
-for x in cursor:
-    print(x)
-
-
 
 cursor.close()
 conn.close()
