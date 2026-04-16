@@ -1,19 +1,19 @@
 from flask import Blueprint, jsonify, request
 from app_backend.db import get_connection
 import re
-
+from datetime import datetime
 partidos_mundial_bp = Blueprint("partidos_mundial", __name__)
 
-FASES_VALIDAS = ["GRUPOS", "DIECISEISAVOS", "OCTAVOS", "CUARTOS", "SEMIS", "FINAL"]
-EQUIPOS_VALIDOS = ["México","Sudáfrica","Corea del Sur","República Checa","Canadá","Bosnia y Herzegovina","Estados Unidos",
-                   "Paraguay","Catar","Suiza","Brasil","Marruecos","Haití","Escocia","Australia",
-                   "Turquía","Alemania","Curazao","Países Bajos","Japón","Costa de Marfil","Ecuador","Suecia","Túnez","España","Islas de Cabo Verde","Bélgica",
-                   "Egipto","Arabia Saudí","Uruguay","República Islámica de Irán","Nueva Zelanda","Francia","Senegal","Irak","Noruega","Argentina","Argelia",
-                   "Austria","Jordania","Portugal","República Democrática del Congo","Inglaterra","Croacia","Ghana","Panamá","Uzbekistán","Colombia"]
 
-@partidos_mundial_bp.route("/")
+
+@partidos_mundial_bp.route("/", methods=["GET"])
 def get_partidos():
-    
+
+
+    PARAMETROS_PERMITIDOS = ['equipo', 'fecha', 'fase', '_limit', '_offset']
+
+
+
     try:
 
         equipo = request.args.get("equipo")
@@ -23,24 +23,84 @@ def get_partidos():
         limit = request.args.get("_limit", 10) 
         offset = request.args.get("_offset", 0)
 
+        conn= get_connection()
+        cursor = conn.cursor (dictionary=True)
 
-        if fase and (fase not in FASES_VALIDAS): #si existe fase Y si fase no esta en fases validas:
-            return jsonify({
-            "errors": [{
-            "code": "404", 
-            "message": "Fase no encontrada", 
-            "level": "error", 
-            "description": f"La fase '{fase}' no existe en el torneo."
-        }]}), 404
 
-        if equipo and (equipo not in EQUIPOS_VALIDOS):
-            return jsonify({
-            "errors": [{
-            "code": "404", 
-            "message": "Equipo no encontrado", 
-            "level": "error", 
-            "description": f"El equipo '{equipo}' no participa del torneo o no existe."
-        }]}), 404
+        for key in request.args.keys():
+            if key not in PARAMETROS_PERMITIDOS:
+                return jsonify({
+                    "errors": [{
+                        "code": "400",
+                        "message": "Parámetro desconocido",
+                        "level" : "error",
+                        "description": f"El parámetro '{key}' no es válido para busqueda."
+                    }]
+                }), 400
+
+
+
+
+        if fase:
+            cursor.execute("SELECT COUNT(*) as count FROM partidos_mundial WHERE fase = %s", (fase,))
+    
+            if cursor.fetchone()['count'] == 0:
+                return jsonify({
+                    "errors": [{
+                        "code": "404", 
+                        "message": "Partido no encontrado", 
+                        "level" : "error",
+                        "description": f"No hay registros de partidos para la fase '{fase}'."
+                    }]
+                }), 404
+
+        if equipo:
+            cursor.execute("SELECT COUNT(*) as count FROM partidos_mundial WHERE equipo_local = %s OR equipo_visitante = %s", (equipo, equipo))
+    
+            if cursor.fetchone()['count'] == 0:
+                return jsonify({
+                        "errors": [{
+                        "code": "404", 
+                        "message": "Partido no encontrado",
+                        "level" : "error", 
+                        "description": f"El equipo '{equipo}' no existe en la base de datos."
+                    }]
+                }), 404
+            
+
+        if fecha:
+
+            try:
+         
+                datetime.strptime(fecha, '%Y-%m-%d')
+
+            except ValueError:
+
+                return jsonify({
+                    "errors": [{
+                    "code": "400", 
+                    "message": "Formato de fecha inválido", 
+                    "level" : "error",
+                    "description": "Usá el formato AAAA-MM-DD (ej: 2026-06-16)"
+                    }]
+                }), 400
+
+
+
+
+
+            cursor.execute("SELECT COUNT(*) as count FROM partidos_mundial WHERE fecha = %s", (fecha,))
+    
+            if cursor.fetchone()['count'] == 0:
+  
+                return jsonify({
+                        "errors": [{
+                        "code": "404", 
+                        "message": "Partido no encontrado",
+                        "level" : "error", 
+                        "description": f"No hay registros de partidos para la fecha '{fecha}'."
+                    }]
+                }), 404
 
         try:
                 limit = int(limit)
@@ -48,23 +108,22 @@ def get_partidos():
         except ValueError:
             return jsonify({"errors": [{"code": "400", "message": "Parámetros inválidos", "level": "error", "description": "_limit y _offset deben ser números enteros"}]}), 400
 
-        conn= get_connection()
-        cursor = conn.cursor (dictionary=True)
+        
 
-        query = "SELECT * FROM Partidos_Mundial" #query dinamica
+        query = "SELECT * FROM partidos_mundial" #query dinamica
         filtros =[]
         params = [] 
 
         if equipo:
-            filtros.append("(Equipo_Local = %s OR Equipo_Visitante = %s)") #le hace faltan los %s --> por eso agregamos equipo, equipo
+            filtros.append("(equipo_local = %s OR equipo_visitante = %s)") #le hace faltan los %s --> por eso agregamos equipo, equipo
             params.extend([equipo, equipo]) #extend permite agregar varios elementos de una lista a otra
              
         if fecha:
-            filtros.append("(Fecha = %s)") 
+            filtros.append("(fecha = %s)") 
             params.append(fecha)
 
         if fase:
-            filtros.append("(Fase = %s)") 
+            filtros.append("(fase = %s)") 
             params.append(fase)
 
         if filtros:
@@ -72,7 +131,7 @@ def get_partidos():
 
         #query de consulta para ver cuantos registros tenemos
 
-        query_count = "SELECT COUNT(*) as total FROM Partidos_Mundial" #as total hace que el diccionario que devuelve esta query que cuenta, sea {'total':48} 
+        query_count = "SELECT COUNT(*) as total FROM partidos_mundial" #as total hace que el diccionario que devuelve esta query que cuenta, sea {'total':48} 
 
         if filtros:
             query_count += " WHERE " + " AND ".join(filtros)
@@ -91,10 +150,10 @@ def get_partidos():
 
         partidos = cursor.fetchall()
 
-        cursor.close()
-        conn.close()
+
 
         if not partidos:
+            
             return "", 204 
 
         qs = ""
@@ -129,6 +188,54 @@ def get_partidos():
         return jsonify({"errors": [{"code": "500", "message": "Error interno del servidor", "level": "error", "description": str(error_interno)}]}), 500
 
 
+    finally:
+        
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
+
+@partidos_mundial_bp.route("/<int:id>",methods= ['GET'])
+def buscar_partido_id(id):
+    
+    try:
+        #establecer coneccion con la db
+        conn= get_connection()
+        cursor= conn.cursor(dictionary=True)
+    
+        #busca el partido con ese id y guarda el resultado
+        cursor.execute("SELECT * FROM partidos_mundial WHERE id = %s",(id,))
+        resultado= cursor.fetchone()
+    
+        #si no existe el id devuelve error
+        if resultado is None:
+            return jsonify ({"errors":[{"code" : "404", "Message":"Try other ID", "level": "Error","Description":"ID Not Found" }]}),404
+
+
+
+    #esto devuelve en manera de diccionario segun esta escrito en la base de datos
+        return jsonify(resultado),200   
+  
+  
+    #a cualquier error no esperado le suelta este mensaje   
+    #str(e) devuelve en formato json el mensaje de error propio de la pagina 
+    except Exception as e:
+        return jsonify({"errors": [{"code": "500", "message": "Internal Server Error", "level": "error", "description": str(e)}]}), 500
+    
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
+
+
+
+
+
 
 @partidos_mundial_bp.route('/<int:id>', methods=['PUT'])
 def update_full(id):
@@ -148,8 +255,6 @@ def update_full(id):
 
         if cursor.rowcount == 0:
 
-            cursor.close()
-            conn.close()
             return jsonify({
             "errors": [{ 
                 "code": "400",
@@ -159,8 +264,7 @@ def update_full(id):
             }]
             }), 400
         
-        cursor.close()
-        conn.close()
+
         return '', 204
     except:
 
@@ -172,6 +276,12 @@ def update_full(id):
                 "description": "Ha ocurrido un error interno en el servidor, corrobore haber ingresado los datos correctamente."
             }]
             }), 500
+    
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
     
 @partidos_mundial_bp.route('/<int:id>', methods=['PATCH'])
 def update_partial(id):
@@ -223,8 +333,6 @@ def update_partial(id):
 
         if cursor.rowcount == 0:
 
-            cursor.close()
-            conn.close()
             return jsonify({
             "errors": [{ 
                 "code": "404",
@@ -233,9 +341,7 @@ def update_partial(id):
                 "description": f"El ID {id} no existe en la base de datos."
             }]
             }), 404
-        
-        cursor.close()
-        conn.close()
+
         return '', 204
     except:
         return jsonify({"errors": [{ 
@@ -245,3 +351,50 @@ def update_partial(id):
                 "description": "Ha ocurrido un error interno en el servidor, corrobore haber ingresado los datos correctamente."
             }]
             }), 500
+    
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
+
+
+
+
+@partidos_mundial_bp.route("/<int:id>",methods= ['DELETE'])
+def eliminar_partido_id(id):
+    
+    try:
+        #establecer coneccion con la db
+        conn= get_connection()
+        cursor= conn.cursor(dictionary=True)
+    
+        #busca el partido con ese id y guarda el resultado
+        cursor.execute("DELETE FROM partidos_mundial WHERE id = %s",(id,))
+
+        conn.commit()
+
+        resultado= cursor.rowcount
+    
+        #si no existe el id devuelve error
+        if resultado == 0:
+            return jsonify ({"errors":[{"code" : "404", "Message":"Try other ID", "level": "Error","Description":"ID Not Found" }]}),404
+
+
+
+    #esto devuelve en manera de diccionario segun esta escrito en la base de datos
+        return jsonify(resultado),204  
+  
+  
+    #a cualquier error no esperado le suelta este mensaje   
+    #str(e) devuelve en formato json el mensaje de error propio de la pagina 
+    except Exception as e:
+        return jsonify({"errors": [{"code": "500", "message": "Internal Server Error", "level": "error", "description": str(e)}]}), 500
+    
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()

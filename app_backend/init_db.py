@@ -6,7 +6,7 @@ with open("init_db.sql") as f:
 conn = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="root",
+    password="root11235813",
 )
 
 cursor = conn.cursor()
@@ -16,6 +16,8 @@ for statement in sql.split(";"):
         cursor.execute(statement)
         conn.commit()
         print("Statement executed")
+
+
 
 
 
