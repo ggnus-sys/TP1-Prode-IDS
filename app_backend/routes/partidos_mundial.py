@@ -5,7 +5,9 @@ from datetime import datetime
 partidos_mundial_bp = Blueprint("partidos_mundial", __name__)
 
 
-
+# ----------------------------------------
+# GET/ partidos
+# ----------------------------------------
 @partidos_mundial_bp.route("/", methods=["GET"])
 def get_partidos():
 
@@ -103,14 +105,19 @@ def get_partidos():
                 }), 404
 
         try:
-                limit = int(limit)
-                offset = int(offset)
+            limit = int(limit)
+            offset = int(offset)
         except ValueError:
-            return jsonify({"errors": [{"code": "400", "message": "Parámetros inválidos", "level": "error", "description": "_limit y _offset deben ser números enteros"}]}), 400
+            return jsonify({"errors":
+                    [{"code": "400",
+                      "message": "Parámetros inválidos",
+                      "level": "error",
+                      "description": "_limit y _offset deben ser números enteros"}]
+                    }), 400
 
         
 
-        query = "SELECT * FROM partidos_mundial" #query dinamica
+        query = "SELECT id,equipo_local, equipo_visitante, fecha, fase FROM partidos_mundial" #query dinamica
         filtros =[]
         params = [] 
 
@@ -136,9 +143,8 @@ def get_partidos():
         if filtros:
             query_count += " WHERE " + " AND ".join(filtros)
 
-        cursor.execute(query_count, params) 
-        resultado_count = cursor.fetchone()
-        total_registros = resultado_count['total'] #'total' seria la clave asociada al valor de los registros
+        cursor.execute(query_count, params)
+        total_registros = cursor.fetchone()['total'] #'total' seria la clave asociada al valor de los registros
 
 
         #no hay condicional para limit y offset ya que tenemos valores por default, nunca sera NONE
@@ -197,26 +203,43 @@ def get_partidos():
 
 
 
+# ----------------------------------------
+# GET/partidos/id  este con resltados
+# ----------------------------------------
 @partidos_mundial_bp.route("/<int:id>",methods= ['GET'])
 def buscar_partido_id(id):
     
     try:
-        #establecer coneccion con la db
+        #establecer conexion con la db
         conn= get_connection()
         cursor= conn.cursor(dictionary=True)
     
         #busca el partido con ese id y guarda el resultado
         cursor.execute("SELECT * FROM partidos_mundial WHERE id = %s",(id,))
-        resultado= cursor.fetchone()
+        registro= cursor.fetchone()
     
         #si no existe el id devuelve error
-        if resultado is None:
+        if registro is None:
             return jsonify ({"errors":[{"code" : "404", "Message":"Try other ID", "level": "Error","Description":"ID Not Found" }]}),404
 
+        partido_respuesta = {
+            "id": registro["id"],
+            "equipo_local": registro["equipo_local"],
+            "equipo_visitante": registro["equipo_visitante"],
+            "fecha": registro["fecha"],
+            "fase": registro["fase"]
+        }
+
+        if registro["goles_local"] is not None and registro["goles_visitante"] is not None:
+            partido_respuesta["resultado"] = {
+                "local": registro["goles_local"],
+                "visitante": registro["goles_visitante"]
+            }
 
 
-    #esto devuelve en manera de diccionario segun esta escrito en la base de datos
-        return jsonify(resultado),200   
+
+    #ESTO DEVUELVE EN FORMA DICCIONARIO CON RESULTADOS DEPENDIENDO DE SI ES O NO NULL
+        return jsonify(partido_respuesta),200
   
   
     #a cualquier error no esperado le suelta este mensaje   
@@ -236,6 +259,9 @@ def buscar_partido_id(id):
 
 
 
+# ----------------------------------------
+# PUT/partidos/id
+# ----------------------------------------
 
 @partidos_mundial_bp.route('/<int:id>', methods=['PUT'])
 def update_full(id):
@@ -282,7 +308,12 @@ def update_full(id):
             cursor.close()
         if conn:
             conn.close()
-    
+
+
+
+# ----------------------------------------
+# PATCH/partidos/ id
+# ----------------------------------------
 @partidos_mundial_bp.route('/<int:id>', methods=['PATCH'])
 def update_partial(id):
 
@@ -362,6 +393,9 @@ def update_partial(id):
 
 
 
+# ----------------------------------------
+# DELETE/ partidos/id
+# ----------------------------------------
 
 @partidos_mundial_bp.route("/<int:id>",methods= ['DELETE'])
 def eliminar_partido_id(id):
@@ -393,6 +427,84 @@ def eliminar_partido_id(id):
     except Exception as e:
         return jsonify({"errors": [{"code": "500", "message": "Internal Server Error", "level": "error", "description": str(e)}]}), 500
     
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
+
+# ----------------------------------------
+# PUT/ partidos/id/resultado  carga o actualiza res
+# ----------------------------------------
+
+
+@partidos_mundial_bp.route("/<int:id>/resultados", methods = ['PUT'])
+def actualizar_resultado(id):
+
+    try:
+        data = request.json
+
+        if data is None:
+            return jsonify({"errors": [{"code": "400",
+                            "message": "El body no cumple con el formato JSON",
+                            "level": "error",
+                            "description": "El body debe ser un objeto JSON valido"}]
+                            }), 400
+
+        local = data.get("local")
+        visitante = data.get("visitante")
+
+        #validaciones bad request
+
+        if local is None or visitante is None:
+            return jsonify({"errors": [{"code": "400",
+                                "message": "Campos requeridos",
+                                "level": "error",
+                                "description": "Campos 'local' y 'visitante' son requeridos"}]
+                    }), 400
+
+        if not isinstance(local, int) or not isinstance(visitante, int):
+            return jsonify({"errors": [{"code": "400",
+                                "message": "Tipo de dato invalido",
+                                "level": "error",
+                                "description": "Los campos 'local' y 'visitante' deben ser enteros"}]
+                    }), 400
+
+        if local < 0 or visitante < 0:
+            return jsonify({"errors": [{"code": "400",
+                                "message": "Valor invalido",
+                                "level": "error",
+                                "description": "Los campos 'local' y 'visitante' deben ser positivos"}]
+                    }), 400
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        #chequeo existencia partido
+        cursor.execute("SELECT id FROM partidos_mundial WHERE id = %s",(id,))
+        if cursor.fetchone() is None:
+            return jsonify({"errors": [{"code": "404",
+                                "message": "Partido no encontrado",
+                                "level": "error",
+                                "description": f"No existe un partido con ID: {id}"}]
+                    }), 404
+
+        #actualiza resultado
+        cursor.execute("UPDATE partidos_mundial SET goles_local = %s, goles_visitante = %s WHERE id = %s",
+        (local,visitante, id))
+        conn.commit()
+
+        return '',204
+
+    except Exception as e:
+        return jsonify({"errors": [{"code": "500",
+                                    "message": "Error interno del servidor",
+                                    "level": "error",
+                                    "description": str(e)}]
+                        }), 500
+
     finally:
         if cursor:
             cursor.close()
