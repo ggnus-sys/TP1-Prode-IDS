@@ -194,11 +194,13 @@ def get_partidos():
         return jsonify({"errors": [{"code": "500", "message": "Error interno del servidor", "level": "error", "description": str(error_interno)}]}), 500
 
 
+
     finally:
-        
-        if cursor:
+
+        if 'cursor' in locals() and cursor:
             cursor.close()
-        if conn:
+
+        if 'conn' in locals() and conn:
             conn.close()
 
 
@@ -246,11 +248,11 @@ def buscar_partido_id(id):
     #str(e) devuelve en formato json el mensaje de error propio de la pagina 
     except Exception as e:
         return jsonify({"errors": [{"code": "500", "message": "Internal Server Error", "level": "error", "description": str(e)}]}), 500
-    
+
     finally:
-        if cursor:
+        if 'cursor' in locals() and cursor:
             cursor.close()
-        if conn:
+        if 'conn' in locals() and conn:
             conn.close()
 
 
@@ -302,11 +304,11 @@ def update_full(id):
                 "description": "Ha ocurrido un error interno en el servidor, corrobore haber ingresado los datos correctamente."
             }]
             }), 500
-    
+
     finally:
-        if cursor:
+        if 'cursor' in locals() and cursor:
             cursor.close()
-        if conn:
+        if 'conn' in locals() and conn:
             conn.close()
 
 
@@ -382,11 +384,11 @@ def update_partial(id):
                 "description": "Ha ocurrido un error interno en el servidor, corrobore haber ingresado los datos correctamente."
             }]
             }), 500
-    
+
     finally:
-        if cursor:
+        if 'cursor' in locals() and cursor:
             cursor.close()
-        if conn:
+        if 'conn' in locals() and conn:
             conn.close()
 
 
@@ -426,11 +428,11 @@ def eliminar_partido_id(id):
     #str(e) devuelve en formato json el mensaje de error propio de la pagina 
     except Exception as e:
         return jsonify({"errors": [{"code": "500", "message": "Internal Server Error", "level": "error", "description": str(e)}]}), 500
-    
+
     finally:
-        if cursor:
+        if 'cursor' in locals() and cursor:
             cursor.close()
-        if conn:
+        if 'conn' in locals() and conn:
             conn.close()
 
 
@@ -505,8 +507,11 @@ def actualizar_resultado(id):
                                     "description": str(e)}]
                         }), 500
 
+
     finally:
-        if cursor:
+
+        if 'cursor' in locals() and cursor:
             cursor.close()
-        if conn:
+
+        if 'conn' in locals() and conn:
             conn.close()
