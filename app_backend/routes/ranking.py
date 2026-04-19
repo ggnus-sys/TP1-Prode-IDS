@@ -64,7 +64,7 @@ def get_ranking():
 
         cursor.execute("SELECT partidos_mundial.goles_local, partidos_mundial.goles_visitante, goles_visitante_prediccion, goles_local_prediccion, id_usuario FROM predicciones INNER JOIN partidos_mundial on predicciones.id_partido = partidos_mundial.id")
         tabla_comparacion_resultados = cursor.fetchall()
-        print(tabla_comparacion_resultados)
+        
         for fila in tabla_comparacion_resultados:
             if (fila["goles_visitante_prediccion"] == fila["goles_visitante"] and fila["goles_local_prediccion"] == fila["goles_local"]):
                 cursor.execute("UPDATE usuarios SET puntos = puntos + 3 WHERE id = %s and puntos = 0", (fila["id_usuario"],))
