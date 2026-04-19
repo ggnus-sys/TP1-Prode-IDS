@@ -25,6 +25,13 @@ CREATE TABLE IF NOT EXISTS usuarios (
 
 );
 
+CREATE TABLE IF NOT EXISTS predicciones(
+    id_prediccion INT AUTO_INCREMENT PRIMARY KEY,
+    id_partido INT NOT NULL,
+    id_usuario INT NOT NULL,
+    goles_local INT NOT NULL,
+    goles_visitante INT NOT NULL
+);
 
 
 INSERT INTO partidos_mundial (fecha, equipo_local, equipo_visitante, fase) VALUES
