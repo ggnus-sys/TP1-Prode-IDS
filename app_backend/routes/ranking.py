@@ -67,10 +67,13 @@ def get_ranking():
         print(tabla_comparacion_resultados)
         for fila in tabla_comparacion_resultados:
             if (fila["goles_visitante_prediccion"] == fila["goles_visitante"] and fila["goles_local_prediccion"] == fila["goles_local"]):
-                cursor.execute("UPDATE usuarios SET puntos = puntos + 3 WHERE id = %s", (fila["id_usuario"],))
+                cursor.execute("UPDATE usuarios SET puntos = puntos + 3 WHERE id = %s and puntos = 0", (fila["id_usuario"],))
+                conn.commit()
+
 
             elif (fila["goles_visitante_prediccion"] >= fila["goles_local_prediccion"] and fila["goles_visitante"] >= fila["goles_local"]) or (fila["goles_visitante_prediccion"] <= fila["goles_local_prediccion"] and fila["goles_visitante"] <= fila["goles_local"]):
-                cursor.execute("UPDATE usuarios SET puntos = puntos + 1 WHERE id = %s", (fila["id_usuario"],))
+                cursor.execute("UPDATE usuarios SET puntos = puntos + 1 WHERE id = %s and puntos = 0", (fila["id_usuario"],))
+                conn.commit()
 
 
         #que el listado devuelva id y nombre
