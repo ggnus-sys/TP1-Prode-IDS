@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
 
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE
+    email VARCHAR(100) NOT NULL UNIQUE,
+    puntos INT DEFAULT 0
 
 );
 
@@ -29,8 +30,8 @@ CREATE TABLE IF NOT EXISTS predicciones(
     id_prediccion INT AUTO_INCREMENT PRIMARY KEY,
     id_partido INT NOT NULL,
     id_usuario INT NOT NULL,
-    goles_local INT NOT NULL,
-    goles_visitante INT NOT NULL
+    goles_local_prediccion INT NOT NULL,
+    goles_visitante_prediccion INT NOT NULL
 );
 
 

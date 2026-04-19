@@ -659,7 +659,8 @@ def actualizar_resultado(id):
 
 def crear_prediccion(id):
     try:
-        datos = request.json
+        datos = (request.json)["body"][0]
+        print(datos)
 
         error, codigo = validar_body_prediccion(datos)
         if error:
@@ -692,8 +693,6 @@ def crear_prediccion(id):
 
         cursor.execute("SELECT * FROM partidos_mundial WHERE id = %s", (id,))
         partido_prediccion = cursor.fetchone()
-
-        print(partido_prediccion)
 
         if partido_prediccion is None:
             return jsonify({
@@ -728,7 +727,7 @@ def crear_prediccion(id):
 
 
 
-        cursor.execute("INSERT INTO predicciones (id_partido, id_usuario, goles_local, goles_visitante) VALUES (%s,%s,%s,%s)", (id,id_usuario, local, visitante))    
+        cursor.execute("INSERT INTO predicciones (id_partido, id_usuario, goles_local_prediccion, goles_visitante_prediccion) VALUES (%s,%s,%s,%s)", (id,id_usuario, local, visitante))    
         conn.commit()
 
         return "",201
