@@ -154,7 +154,7 @@ def buscar_usuarios():
 @usuarios_bp.route("/", methods = ["POST"])
 def crear_usuario():
     try:
-        datos = (request.json)["body"][0] #Odio esta linea de codigo con numero magico, deberemos cambiarlo despues pero por ahora funciona, sino el body no se interpreta bien
+        datos = (request.json)
 
         #uso de la función para validar el body !!! + manejo de error (si no queda None, None)
         error, codigo = validar_body_de_usuario(datos)

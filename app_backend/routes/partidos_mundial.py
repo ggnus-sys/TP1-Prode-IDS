@@ -659,7 +659,7 @@ def actualizar_resultado(id):
 
 def crear_prediccion(id):
     try:
-        datos = (request.json)["body"][0]
+        datos = (request.json)
         print(datos)
 
         error, codigo = validar_body_prediccion(datos)
