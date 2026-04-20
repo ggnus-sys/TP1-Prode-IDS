@@ -66,18 +66,18 @@ def get_ranking():
         tabla_comparacion_resultados = cursor.fetchall()
 
         for fila in tabla_comparacion_resultados:
-            if (fila["goles_visitante_prediccion"] == fila["goles_visitante"] and fila["goles_local_prediccion"] == fila["goles_local"]):
-                cursor.execute("UPDATE usuarios SET puntos = puntos + 3 WHERE id = %s and puntos = 0", (fila["id_usuario"],))
-                conn.commit()
+            if (fila["goles_visitante"] or fila["goles_local"]):
+                if (fila["goles_visitante_prediccion"] == fila["goles_visitante"] and fila["goles_local_prediccion"] == fila["goles_local"]):
+                    cursor.execute("UPDATE usuarios SET puntos = puntos + 3 WHERE id = %s and puntos = 0", (fila["id_usuario"],))
+
+                elif (fila["goles_visitante_prediccion"] >= fila["goles_local_prediccion"] and fila["goles_visitante"] >= fila["goles_local"]) or (fila["goles_visitante_prediccion"] <= fila["goles_local_prediccion"] and fila["goles_visitante"] <= fila["goles_local"]):
+                    cursor.execute("UPDATE usuarios SET puntos = puntos + 1 WHERE id = %s and puntos = 0", (fila["id_usuario"],))
 
 
-            elif (fila["goles_visitante_prediccion"] >= fila["goles_local_prediccion"] and fila["goles_visitante"] >= fila["goles_local"]) or (fila["goles_visitante_prediccion"] <= fila["goles_local_prediccion"] and fila["goles_visitante"] <= fila["goles_local"]):
-                cursor.execute("UPDATE usuarios SET puntos = puntos + 1 WHERE id = %s and puntos = 0", (fila["id_usuario"],))
-                conn.commit()
 
-
+        conn.commit()
         #que el listado devuelva id y nombre
-        cursor.execute("SELECT id,nombre, puntos FROM usuarios ORDER BY puntos ASC LIMIT %s OFFSET %s", (limit, offset))
+        cursor.execute("SELECT id,nombre, puntos FROM usuarios ORDER BY puntos DESC LIMIT %s OFFSET %s", (limit, offset))
         usuarios = cursor.fetchall()
 
         if not usuarios:

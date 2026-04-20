@@ -1,5 +1,5 @@
 import sys 
-sys.path.append("..")  
+sys.path.append("..")# Agrega el directorio padre al sys.path para permitir la importación de módulos desde ese nivel
 from flask import Flask
 from flask_cors import CORS
 from app_backend.routes.partidos_mundial import partidos_mundial_bp
